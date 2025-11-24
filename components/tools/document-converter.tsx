@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
-import { Upload, Download, FileText, Loader2, CheckCircle2 } from "lucide-react"
+import { Upload, Download, FileText, Loader2, CheckCircle2, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -18,9 +18,21 @@ interface ConversionFile {
   error?: string
 }
 
+const CONVERSION_PRESETS = [
+  { from: "pdf", to: "docx", label: "PDF to Word" },
+  { from: "docx", to: "pdf", label: "Word to PDF" },
+  { from: "pdf", to: "txt", label: "PDF to Text" },
+  { from: "html", to: "pdf", label: "HTML to PDF" },
+  { from: "csv", to: "json", label: "CSV to JSON" },
+  { from: "json", to: "csv", label: "JSON to CSV" },
+  { from: "md", to: "html", label: "Markdown to HTML" },
+  { from: "txt", to: "pdf", label: "Text to PDF" },
+]
+
 export function DocumentConverter() {
   const [files, setFiles] = useState<ConversionFile[]>([])
-  const [outputFormat, setOutputFormat] = useState<ConversionFormat>("pdf")
+  const [fromFormat, setFromFormat] = useState<ConversionFormat>("pdf")
+  const [outputFormat, setOutputFormat] = useState<ConversionFormat>("docx")
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || [])
@@ -63,6 +75,11 @@ export function DocumentConverter() {
     files.filter((f) => f.status === "completed").forEach((f) => downloadFile(f))
   }
 
+  const selectPreset = (from: ConversionFormat, to: ConversionFormat) => {
+    setFromFormat(from)
+    setOutputFormat(to)
+  }
+
   return (
     <div className="p-8 max-w-6xl mx-auto">
       <div className="mb-8">
@@ -70,10 +87,31 @@ export function DocumentConverter() {
         <p className="text-muted-foreground">Convert between PDF, DOCX, PPTX, TXT, MD, HTML, CSV, and JSON formats</p>
       </div>
 
+      <Card className="p-6 mb-6">
+        <h3 className="text-lg font-semibold mb-4">Quick Conversions</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {CONVERSION_PRESETS.map((preset) => (
+            <Button
+              key={preset.label}
+              variant={fromFormat === preset.from && outputFormat === preset.to ? "default" : "outline"}
+              onClick={() => selectPreset(preset.from as ConversionFormat, preset.to as ConversionFormat)}
+              className="justify-start gap-2"
+            >
+              <span className="text-xs">{preset.label}</span>
+              <ArrowRight className="h-3 w-3" />
+            </Button>
+          ))}
+        </div>
+      </Card>
+
       {files.length === 0 ? (
         <Card className="p-12 text-center">
           <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
           <h3 className="text-xl font-semibold mb-2">Upload Documents</h3>
+          <p className="text-sm text-muted-foreground mb-2">
+            Currently converting: <strong>{fromFormat.toUpperCase()}</strong> to{" "}
+            <strong>{outputFormat.toUpperCase()}</strong>
+          </p>
           <p className="text-sm text-muted-foreground mb-6">Select one or multiple files to convert</p>
           <input type="file" multiple onChange={handleFileChange} className="hidden" id="document-upload" />
           <Button asChild size="lg">
@@ -87,6 +125,24 @@ export function DocumentConverter() {
         <div className="space-y-6">
           <Card className="p-6">
             <div className="flex flex-wrap gap-4 items-center mb-6">
+              <div className="flex-1 min-w-[200px]">
+                <label className="text-sm font-medium mb-2 block">Convert From</label>
+                <Select value={fromFormat} onValueChange={(v) => setFromFormat(v as ConversionFormat)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pdf">PDF (.pdf)</SelectItem>
+                    <SelectItem value="docx">Word Document (.docx)</SelectItem>
+                    <SelectItem value="pptx">PowerPoint (.pptx)</SelectItem>
+                    <SelectItem value="txt">Plain Text (.txt)</SelectItem>
+                    <SelectItem value="md">Markdown (.md)</SelectItem>
+                    <SelectItem value="html">HTML (.html)</SelectItem>
+                    <SelectItem value="csv">CSV (.csv)</SelectItem>
+                    <SelectItem value="json">JSON (.json)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex-1 min-w-[200px]">
                 <label className="text-sm font-medium mb-2 block">Convert To</label>
                 <Select value={outputFormat} onValueChange={(v) => setOutputFormat(v as ConversionFormat)}>
